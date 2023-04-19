@@ -25,7 +25,6 @@ java_library(
     deps = [
         "//:dagger_with_compiler",
         "//java/dagger/hilt/processor/internal:classnames",
-        "//java/dagger/hilt/processor/internal:element_descriptors",
         "//java/dagger/internal/codegen/extension",
         "//java/dagger/internal/codegen/xprocessing",
         "//third_party/java/auto:common",
