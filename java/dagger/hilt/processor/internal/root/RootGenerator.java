@@ -130,7 +130,7 @@ final class RootGenerator {
     RootFileFormatter.write(
         JavaFile.builder(componentsWrapperClassName.packageName(), componentsWrapper.build())
             .build(),
-        env.getFiler());
+        env);
   }
 
   private static ComponentTree filterDescriptors(ComponentTree componentTree) {

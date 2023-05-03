@@ -16,17 +16,23 @@
 
 package dagger.hilt.processor.internal.root;
 
-import androidx.room.compiler.processing.XFiler;
+import static dagger.internal.codegen.extension.DaggerStreams.toImmutableList;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import androidx.room.compiler.processing.XElement;
+import androidx.room.compiler.processing.XFiler.Mode;
+import androidx.room.compiler.processing.XProcessingEnv;
 import androidx.room.compiler.processing.compat.XConverters;
+import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.JavaFile;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.processing.Filer;
-import javax.lang.model.element.Element;
-import javax.tools.JavaFileObject;
 
 /**
  * Typically we would just use {@code JavaFile#writeTo()} to write files. However, this formatter
@@ -39,36 +45,27 @@ import javax.tools.JavaFileObject;
 final class RootFileFormatter {
   private static final Pattern CLASS_PATERN = Pattern.compile("(\\h*)(.*class.*implements)(.*\\{)");
 
-  // TODO(kuanyingchou): This should be converted to XProcessing as well.
   /** Formats the {@link JavaFile} java source file. */
-  static void write(JavaFile javaFile, Filer filer) throws IOException {
-    String fileName =
-        javaFile.packageName.isEmpty()
-            ? javaFile.typeSpec.name
-            : javaFile.packageName + "." + javaFile.typeSpec.name;
-
-    Element[] originatingElements = javaFile.typeSpec.originatingElements.toArray(new Element[0]);
+  static void write(JavaFile javaFile, XProcessingEnv env) throws IOException {
+    ImmutableList<XElement> originatingElements =
+        javaFile.typeSpec.originatingElements.stream()
+            .map(element -> XConverters.toXProcessing(element, env))
+            .collect(toImmutableList());
 
     StringBuilder sb = new StringBuilder("");
     javaFile.writeTo(sb);
     String fileContent = formatInterfaces(sb.toString(), CLASS_PATERN);
 
-    JavaFileObject filerSourceFile = filer.createSourceFile(fileName, originatingElements);
-    try (Writer writer = filerSourceFile.openWriter()) {
+    try (OutputStream outputStream = env.getFiler()
+            .writeSource(
+                javaFile.packageName,
+                javaFile.typeSpec.name,
+                "java",
+                originatingElements,
+                Mode.Isolating);
+        Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       writer.write(fileContent);
-    } catch (Exception e) {
-      try {
-        filerSourceFile.delete();
-      } catch (Exception ignored) {
-        // Nothing to do.
-      }
-      throw e;
     }
-  }
-
-  /** Formats the {@link JavaFile} java source file. */
-  static void write(JavaFile javaFile, XFiler filer) throws IOException {
-    write(javaFile, XConverters.toJavac(filer));
   }
 
   private static String formatInterfaces(String content, Pattern pattern) {
