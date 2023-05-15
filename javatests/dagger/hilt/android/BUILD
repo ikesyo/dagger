@@ -14,8 +14,6 @@
 # Description:
 #   Tests for internal code for implementing Hilt processors.
 
-load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_android_library")
-
 package(default_visibility = ["//:src"])
 
 android_library(
@@ -384,7 +382,7 @@ android_local_test(
     ],
 )
 
-kt_android_library(
+android_library(
     name = "QualifierInFieldsClass",
     testonly = True,
     srcs = ["QualifierInFieldsClass.kt"],
