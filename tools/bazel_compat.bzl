@@ -15,15 +15,12 @@
 """Macros for building with Bazel.
 """
 
-load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_android_library")
+load("//tools/build_defs/android:rules.bzl", "android_library")
 
 def compat_kt_android_library(name, **kwargs):
-    bazel_kt_android_library(name, kwargs)
+    """A macro that wraps Bazel's android_library.
 
-def bazel_kt_android_library(name, kwargs):
-    """A macro that wraps Bazel's kt_android_library.
-
-    This macro wraps Bazel's kt_android_library to output the jars files
+    This macro wraps Bazel's android_library to output the jars files
     in the expected locations (b/203519416). It also adds a dependency on
     kotlin_stdlib if there are kotlin sources.
 
@@ -45,8 +42,8 @@ def bazel_kt_android_library(name, kwargs):
     # suffixed with "_kt". Thus, we have to do a bit of name aliasing to ensure that
     # the jars exist at the expected targets.
     kt_android_library(
-        name = "{}_internal".format(name),
-        **kwargs
+       name = "{}_internal".format(name),
+       **kwargs
     )
 
     native.alias(
